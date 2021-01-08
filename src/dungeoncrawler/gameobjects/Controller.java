@@ -1,4 +1,4 @@
-package dungeoncrawler.gameObjects;
+package dungeoncrawler.gameobjects;
 
 public interface Controller {
     boolean isRequestingUp();
