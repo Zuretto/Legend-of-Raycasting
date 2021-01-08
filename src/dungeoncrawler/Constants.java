@@ -8,4 +8,6 @@ public class Constants {
     public static final int WALL_TEXTURE_WIDTH = 32;
     public static final int WALL_TEXTURE_HEIGHT = 32;
     public static final double CAMERA_ANGLE = Math.PI / 2;
+    public static final int ENTITY_TEXTURE_WIDTH = 128;
+    public static final int ENTITY_TEXTURE_HEIGHT = 128;
 }
