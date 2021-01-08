@@ -1,4 +1,4 @@
-package dungeoncrawler.gameObjects;
+package dungeoncrawler.gameobjects;
 
 import dungeoncrawler.Map;
 
@@ -16,7 +16,7 @@ public class Team extends GameObject {
     private double planeX;
     private double planeY; //FOV
 
-    private Controller controller;
+    private final Controller controller;
 
     public Team(double posX, double posY, double dirX, double dirY, double viewAngle, Controller controller) {
         this.posX = (double)Math.round(posX - 0.5) + 0.5;
