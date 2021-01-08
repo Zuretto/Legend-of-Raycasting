@@ -1,4 +1,4 @@
-package dungeoncrawler.gameObjects;
+package dungeoncrawler.iohandler;
 
 import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
