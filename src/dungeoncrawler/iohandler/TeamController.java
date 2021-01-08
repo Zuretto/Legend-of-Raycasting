@@ -1,8 +1,10 @@
-package dungeoncrawler.gameObjects;
+package dungeoncrawler.iohandler;
+
+import dungeoncrawler.gameobjects.Controller;
 
 import java.awt.event.KeyEvent;
 
-public class TeamController implements  Controller{
+public class TeamController implements Controller {
 
     private Input input;
 
