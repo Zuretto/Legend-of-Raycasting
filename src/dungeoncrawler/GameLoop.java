@@ -24,17 +24,19 @@ public class GameLoop implements Runnable{
         nextStatTime = System.currentTimeMillis() + 1000;
 
         while(running){
-            currentTime = System.currentTimeMillis();
-            double lastRenderTimeInSeconds = (currentTime - lastUpdate) / 1000d;
-            accumulator += lastRenderTimeInSeconds;
-            lastUpdate = currentTime;
-            if(accumulator >= updateRate) {
-                while (accumulator >= updateRate) {
-                    update();
-                    accumulator -= updateRate;
-                }
-                render();
-            }
+            //currentTime = System.currentTimeMillis();
+            //double lastRenderTimeInSeconds = (currentTime - lastUpdate) / 1000d;
+            //accumulator += lastRenderTimeInSeconds;
+            //lastUpdate = currentTime;
+            //if(accumulator >= updateRate) {
+            //    while (accumulator >= updateRate) {
+            //        update();
+            //        accumulator -= updateRate;
+            //    }
+            //    render();
+            //}
+            update();
+            render();
             printStats();
         }
     }
