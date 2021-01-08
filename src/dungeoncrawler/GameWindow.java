@@ -1,18 +1,26 @@
 package dungeoncrawler;
 
-import dungeoncrawler.gameObjects.Input;
-import dungeoncrawler.gameObjects.Team;
+import dungeoncrawler.gameobjects.Entity;
+import dungeoncrawler.gameobjects.GameObject;
+import dungeoncrawler.iohandler.Input;
+import dungeoncrawler.gameobjects.Team;
 
 import java.awt.*;
-import java.awt.event.KeyListener;
 import java.awt.image.BufferStrategy;
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Comparator;
 import javax.swing.JFrame;
 
 public class GameWindow extends JFrame {
 
+
+
     private GameWindowResourceManager resourceManager;
     private Canvas canvas;
+
+    private double[] ZBuffer;
 
     public GameWindow(int width, int height, Input input) {
 
@@ -20,6 +28,8 @@ public class GameWindow extends JFrame {
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setResizable(false);
         setSize(width, height);
+
+
 
         try {
             this.resourceManager = new GameWindowResourceManager();
@@ -29,7 +39,7 @@ public class GameWindow extends JFrame {
         canvas = new Canvas();
         canvas.setPreferredSize((new Dimension(width,height)));
         canvas.setFocusable(false);
-        addKeyListener((KeyListener) input);
+        addKeyListener(input);
         add(canvas);
         pack();
 
@@ -37,13 +47,22 @@ public class GameWindow extends JFrame {
 
         setLocationRelativeTo(null);
         setVisible(true);
-    }
 
-    public void renderWorld(Team team, Map map, double[] ZBuffer){
+        ZBuffer = new double[this.getWidth()];
+    }
+    public void render(Team team, Map map, ArrayList<Entity> entities){
         BufferStrategy bufferStrategy = canvas.getBufferStrategy();
         Graphics graphics = bufferStrategy.getDrawGraphics();
         graphics.setColor(Color.blue);
+
         graphics.fillRect(0, 0, canvas.getWidth(), canvas.getHeight());
+        renderWorld(team, map, graphics);
+        renderEntities(team, entities, graphics);
+
+        graphics.dispose();
+        bufferStrategy.show();
+    }
+    private void renderWorld(Team team, Map map, Graphics graphics){
         for(int stripeX = 0; stripeX < this.getWidth(); ++stripeX){
             //calclate ray position and direction
             double cameraX = 2 * stripeX / (double) this.getWidth() - 1; //-1 for left pixel, 1 for right pixel
@@ -121,9 +140,53 @@ public class GameWindow extends JFrame {
                     textureX, 0, textureX + 1, Constants.WALL_TEXTURE_HEIGHT, this);
         }
 
-        graphics.dispose();
-        bufferStrategy.show();
     }
 
+    private void renderEntities(Team team, ArrayList<Entity> entities, Graphics graphics){
+        entities.sort((Comparator.<GameObject>
+                comparingDouble(character1 -> character1.calculateEuclideanDistance(team))
+                .thenComparingDouble(character2 -> character2.calculateEuclideanDistance(team))));
 
-}
+        for(Entity e : entities) {
+            //translate sprite position to relative to camera
+            double spriteX = e.getPosX() - team.getPosX();
+            double spriteY = e.getPosY() - team.getPosY();;
+            //transform sprite with the inverse camera matrix
+            // [ planeX   dirX ] -1                                       [ dirY      -dirX ]
+            // [               ]       =  1/(planeX*dirY-dirX*planeY) *   [                 ]
+            // [ planeY   dirY ]                                          [ -planeY  planeX ]
+            double invDet = 1.0 / (team.getPlaneX() * team.getDirY() - team.getDirX() * team.getPlaneY()); //required for correct matrix multiplication
+            //this is actually the depth inside the screen, that what Z is   in 3D
+            double transformX = invDet * (team.getDirY() * spriteX - team.getDirX() * spriteY);
+            double transformY = invDet * (- team.getPlaneY() * spriteX + team.getPlaneX() * spriteY);
+            int spriteScreenX = (int) ((this.getWidth() / 2) * (1 + transformX / transformY));
+            //calculate height of the sprite on screen
+            int spriteHeight = Math.abs((int)(this.getHeight() / (transformY))); //using 'transformY' instead of the real distance prevents fisheye
+            //calculate lowest and highest pixel to fill in current stripe
+            int drawStartY = -spriteHeight / 2 + this.getHeight() / 2;
+            //if(drawStartY < 0) drawStartY = 0;
+            int drawEndY = spriteHeight / 2 + this.getHeight() / 2;
+            //if(drawEndY >= casterHeight) drawEndY = casterHeight - 1;
+            //calculate width of the sprite
+            int spriteWidth = Math.abs((int) (this.getHeight() / (transformY)));
+            int drawStartX = -spriteWidth / 2 + spriteScreenX;
+            if(drawStartX < 0) drawStartX = 0;
+            int drawEndX = spriteWidth / 2 + spriteScreenX;
+            if(drawEndX >= this.getWidth()) drawEndX = this.getWidth() - 1;
+            for(int stripe = drawStartX; stripe < drawEndX; stripe++){
+                int texX = (int)((256 * (stripe - (-spriteWidth / 2 + spriteScreenX)) * Constants.ENTITY_TEXTURE_WIDTH / spriteWidth) / 256);
+                if(transformY > 0 && stripe > 0 && stripe < this.getWidth() && transformY < ZBuffer[stripe]){
+                    System.out.println(texX);
+                    graphics.drawImage(e.getEntityImage(), stripe, drawStartY, stripe + 1, drawEndY,
+                            texX, 0, texX + 1, Constants.ENTITY_TEXTURE_HEIGHT, this);
+                    }
+                    //sf::Sprite lineSprite(resManager->enemyTexturesPx[enemy->getType()][enemy->calculateState()][texX]);
+                    //lineSprite.setScale(1, (double)(drawEndY - drawStartY)/enemyHeight); //stretches line of pixels to the bottom
+                    //lineSprite.move(stripe, drawStartY);
+                    //target.draw(lineSprite);
+
+                }
+            }
+        }
+
+    }
