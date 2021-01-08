@@ -7,7 +7,7 @@ public class GameLoop implements Runnable{
     private boolean running;
     private final double updateRate = 1.0d/60d;
 
-    private  long nextStatTime;
+    private long nextStatTime;
     private int fps, ups;
 
     public GameLoop(Game game){
